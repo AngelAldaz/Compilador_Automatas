@@ -1,5 +1,3 @@
-from config import TIPOS
-
 def tipar_lista(valores):
   def convertir(valor: str):
     try:

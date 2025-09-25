@@ -1,5 +1,3 @@
-import re
-
 # Expresión regular para los identificadores
 ID_REGEX = r"id_[A-Za-z0-9_-]+"
 REGEX_STRING = r'"([^"]+)"'
