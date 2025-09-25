@@ -55,7 +55,7 @@ def compilar_errores(editor, tabla_dicc, lexemaDict):
     linea_de_tipos = []
     
     # --- Detectar declaración ---
-    if linea_de_lexemas and linea_de_lexemas[0] in ["num", "cow"]:  
+    if linea_de_lexemas and linea_de_lexemas[0] in TIPOS.keys():  
       # después del tipo vienen los identificadores, separados por coma
       ids = [x.strip().strip(",") for x in linea_de_lexemas[1:] if x != ","]
 
