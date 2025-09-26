@@ -50,10 +50,12 @@ def compilar_errores(editor, tabla_dicc, lexemaDict):
   
   identificadores_declarados = set() 
    
+  for item in tabla_dicc.get_children():
+    tabla_dicc.delete(item)
   for linea in lineas:
     linea_de_lexemas = linea.split()
     linea_de_tipos = []
-    
+     # limpiar tabla
     # --- Detectar declaración ---
     if linea_de_lexemas and linea_de_lexemas[0] in TIPOS.keys():  
       # después del tipo vienen los identificadores, separados por coma
@@ -109,3 +111,4 @@ def compilar_errores(editor, tabla_dicc, lexemaDict):
           tabla_dicc.insert("", "end", values=(token, linea_error, lexema_error, descripcion))
           autoajustar_columnas(tabla_dicc)
     lineas_recorridas += 1
+   
