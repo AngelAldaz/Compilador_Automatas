@@ -1,8 +1,9 @@
 import re
 from config import ID_REGEX, REGEX_STRING, TIPOS
 from utils import tipar_lista, autoajustar_columnas
+from triplo import generar_triplos
 
-def compilar_codigo(editor, tabla, tabla_dicc):
+def compilar_codigo(editor, tabla, tabla_dicc, tabla_triplos=None):
   codigo = editor.get("1.0", "end").strip()  # quitar espacios innecesarios
   lexemaDict = {}
 
@@ -37,6 +38,10 @@ def compilar_codigo(editor, tabla, tabla_dicc):
   autoajustar_columnas(tabla)
 
   compilar_errores(editor, tabla_dicc, lexemaDict)
+  
+  # Generar y mostrar triplos si la tabla está disponible
+  if tabla_triplos is not None:
+    compilar_triplos(editor, tabla_triplos)
   
 def compilar_errores(editor, tabla_dicc, lexemaDict):
   codigo = editor.get("1.0", "end").strip()  # quitar espacios innecesarios
@@ -111,4 +116,25 @@ def compilar_errores(editor, tabla_dicc, lexemaDict):
           tabla_dicc.insert("", "end", values=(token, linea_error, lexema_error, descripcion))
           autoajustar_columnas(tabla_dicc)
     lineas_recorridas += 1
-   
+
+def compilar_triplos(editor, tabla_triplos):
+  """Genera y muestra la tabla de triplos"""
+  codigo = editor.get("1.0", "end").strip()
+  
+  # Generar triplos
+  triplos = generar_triplos(codigo)
+  
+  # Limpiar tabla
+  for item in tabla_triplos.get_children():
+    tabla_triplos.delete(item)
+  
+  # Insertar triplos en la tabla
+  for no_linea, triplo in triplos.items():
+    tabla_triplos.insert("", "end", values=(
+      no_linea, 
+      triplo['operador'], 
+      triplo['Dato Objeto'], 
+      triplo['Dato Fuente']
+    ))
+  
+  autoajustar_columnas(tabla_triplos)
