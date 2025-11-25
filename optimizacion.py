@@ -7,17 +7,16 @@ from config import ID_REGEX
 
 def detectar_optimizaciones(codigo):
     """
-    Detecta instrucciones redundantes en el código
+    Detecta instrucciones redundantes en el código usando la misma lógica que aplicar_optimizacion
     Retorna: lista de números de línea que pueden ser optimizadas
     """
     lineas = codigo.strip().split('\n')
     lineas_optimizables = []
     
-    # Diccionario para rastrear última asignación de cada combinación variable=expresion
-    # Formato: {clave_asignacion: (num_linea, variables_en_expresion)}
-    ultimas_asignaciones = {}
+    # Diccionario: expresion -> variable que la contiene
+    expresion_a_variable = {}
     
-    # Diccionario para rastrear en qué línea fue modificada cada variable por última vez
+    # Diccionario para rastrear última modificación
     ultima_modificacion = {}
     
     for i, linea in enumerate(lineas):
@@ -31,77 +30,165 @@ def detectar_optimizaciones(codigo):
                 variable = lexemas[0]
                 expresion = ' '.join(lexemas[idx_igual + 1:])
                 
-                # Verificar si es un identificador válido
                 if re.match(ID_REGEX, variable):
-                    # Extraer todas las variables usadas en la expresión
+                    # Extraer variables usadas en la expresión
                     variables_en_expresion = set(re.findall(ID_REGEX, expresion))
                     
-                    # Crear una clave única para esta asignación
-                    clave_asignacion = f"{variable}={expresion}"
-                    
-                    # Verificar si esta misma asignación ya existe
-                    if clave_asignacion in ultimas_asignaciones:
-                        linea_anterior, vars_anteriores = ultimas_asignaciones[clave_asignacion]
+                    # Verificar si esta expresión ya fue calculada antes
+                    if expresion in expresion_a_variable:
+                        var_anterior = expresion_a_variable[expresion]
                         
-                        # Verificar si ALGUNA de las variables en la expresión fue modificada
-                        # después de la última vez que se hizo esta asignación
+                        # Verificar si alguna variable en la expresión cambió
                         alguna_var_cambio = False
                         for var in variables_en_expresion:
                             if var in ultima_modificacion:
-                                if ultima_modificacion[var] > linea_anterior:
-                                    alguna_var_cambio = True
-                                    break
+                                # Buscar en qué línea se asignó var_anterior
+                                for j in range(i):
+                                    linea_previa = lineas[j].split()
+                                    if linea_previa and linea_previa[0] == var_anterior:
+                                        if var in ultima_modificacion and ultima_modificacion[var] > (j + 1):
+                                            alguna_var_cambio = True
+                                            break
                         
                         if not alguna_var_cambio:
-                            # Ninguna variable cambió, esta línea es redundante
+                            # Esta línea es redundante
                             lineas_optimizables.append(num_linea)
-                        else:
-                            # Al menos una variable cambió, actualizar la asignación
-                            ultimas_asignaciones[clave_asignacion] = (num_linea, variables_en_expresion)
-                    else:
-                        # Primera vez que vemos esta asignación
-                        ultimas_asignaciones[clave_asignacion] = (num_linea, variables_en_expresion)
+                            continue
                     
-                    # Registrar que esta variable fue modificada en esta línea
+                    # Registrar esta expresión
+                    expresion_a_variable[expresion] = variable
+                    
+                    # Limpiar expresiones anteriores con esta variable
+                    expresiones_a_eliminar = [exp for exp, var in expresion_a_variable.items() if var == variable]
+                    for exp in expresiones_a_eliminar:
+                        if exp != expresion:
+                            del expresion_a_variable[exp]
+                    
+                    # Registrar modificación
                     ultima_modificacion[variable] = num_linea
-                    
-                    # Limpiar asignaciones anteriores de esta misma variable (con otras expresiones)
-                    claves_a_eliminar = [k for k in ultimas_asignaciones.keys() 
-                                        if k.startswith(f"{variable}=") and k != clave_asignacion]
-                    for k in claves_a_eliminar:
-                        del ultimas_asignaciones[k]
         
         # Manejar FOR loops
-        if 'for' in lexemas and ';' in lexemas:
+        elif 'for' in lexemas and ';' in lexemas:
             idx_puntocoma = lexemas.index(';')
             if idx_puntocoma + 1 < len(lexemas):
                 var_modificada = lexemas[idx_puntocoma + 1]
-                # Registrar modificación
                 ultima_modificacion[var_modificada] = num_linea
-                # Limpiar asignaciones de esta variable
-                claves_a_eliminar = [k for k in ultimas_asignaciones.keys() 
-                                    if k.startswith(f"{var_modificada}=")]
-                for k in claves_a_eliminar:
-                    del ultimas_asignaciones[k]
+                # Limpiar expresiones con esta variable
+                expresiones_a_eliminar = [exp for exp, var in expresion_a_variable.items() 
+                                         if var == var_modificada or var_modificada in exp]
+                for exp in expresiones_a_eliminar:
+                    del expresion_a_variable[exp]
     
     return lineas_optimizables
 
 
 def aplicar_optimizacion(codigo):
     """
-    Aplica la optimización eliminando líneas redundantes
-    Retorna: (codigo_optimizado, lineas_eliminadas)
+    Aplica la optimización eliminando líneas redundantes y sustituyendo variables
+    Retorna: (codigo_optimizado, lineas_eliminadas, lineas_modificadas)
     """
     lineas = codigo.strip().split('\n')
-    lineas_optimizables = detectar_optimizaciones(codigo)
+    lineas_optimizables = []
+    lineas_modificadas = []  # Líneas que tienen sustituciones
+    
+    # Diccionario: expresion -> variable que la contiene
+    expresion_a_variable = {}
+    
+    # Diccionario: variable -> variable equivalente (para sustituciones)
+    variable_equivalente = {}
+    
+    # Diccionario para rastrear última modificación
+    ultima_modificacion = {}
     
     codigo_optimizado = []
+    
     for i, linea in enumerate(lineas):
         num_linea = i + 1
-        if num_linea not in lineas_optimizables:
+        lexemas = linea.split()
+        
+        # Buscar asignaciones: variable = expresion
+        if '=' in lexemas and lexemas[0] != 'for':
+            idx_igual = lexemas.index('=')
+            if idx_igual > 0:
+                variable = lexemas[0]
+                expresion = ' '.join(lexemas[idx_igual + 1:])
+                
+                if re.match(ID_REGEX, variable):
+                    # Sustituir variables en la expresión por sus equivalentes
+                    expresion_sustituida = expresion
+                    for var_original, var_equivalente in variable_equivalente.items():
+                        expresion_sustituida = re.sub(r'\b' + re.escape(var_original) + r'\b', 
+                                                     var_equivalente, 
+                                                     expresion_sustituida)
+                    
+                    # Extraer variables usadas en la expresión
+                    variables_en_expresion = set(re.findall(ID_REGEX, expresion_sustituida))
+                    
+                    # Verificar si esta expresión ya fue calculada antes
+                    if expresion_sustituida in expresion_a_variable:
+                        var_anterior = expresion_a_variable[expresion_sustituida]
+                        
+                        # Verificar si alguna variable en la expresión cambió
+                        alguna_var_cambio = False
+                        for var in variables_en_expresion:
+                            if var in ultima_modificacion:
+                                for j in range(i):
+                                    linea_previa = lineas[j].split()
+                                    if linea_previa and linea_previa[0] == var_anterior:
+                                        if var in ultima_modificacion and ultima_modificacion[var] > (j + 1):
+                                            alguna_var_cambio = True
+                                            break
+                        
+                        if not alguna_var_cambio:
+                            # Esta línea es redundante
+                            lineas_optimizables.append(num_linea)
+                            # Registrar que esta variable es equivalente a la anterior
+                            variable_equivalente[variable] = var_anterior
+                            continue  # No agregar esta línea al código optimizado
+                    
+                    # Agregar la línea (con sustituciones si las hay)
+                    if expresion_sustituida != expresion:
+                        linea_optimizada = f"{variable} = {expresion_sustituida}"
+                        codigo_optimizado.append(linea_optimizada)
+                        # Marcar esta línea como modificada
+                        lineas_modificadas.append(num_linea)
+                    else:
+                        codigo_optimizado.append(linea)
+                    
+                    # Registrar esta expresión
+                    expresion_a_variable[expresion_sustituida] = variable
+                    
+                    # Limpiar expresiones anteriores con esta variable
+                    expresiones_a_eliminar = [exp for exp, var in expresion_a_variable.items() if var == variable]
+                    for exp in expresiones_a_eliminar:
+                        if exp != expresion_sustituida:
+                            del expresion_a_variable[exp]
+                    
+                    # Registrar modificación
+                    ultima_modificacion[variable] = num_linea
+                    
+                    # Limpiar equivalencias que involucren esta variable
+                    vars_a_limpiar = [v for v, eq in variable_equivalente.items() if eq == variable or v == variable]
+                    for v in vars_a_limpiar:
+                        del variable_equivalente[v]
+        
+        # Manejar FOR loops
+        elif 'for' in lexemas and ';' in lexemas:
+            codigo_optimizado.append(linea)
+            idx_puntocoma = lexemas.index(';')
+            if idx_puntocoma + 1 < len(lexemas):
+                var_modificada = lexemas[idx_puntocoma + 1]
+                ultima_modificacion[var_modificada] = num_linea
+                # Limpiar expresiones con esta variable
+                expresiones_a_eliminar = [exp for exp, var in expresion_a_variable.items() 
+                                         if var == var_modificada or var_modificada in exp]
+                for exp in expresiones_a_eliminar:
+                    del expresion_a_variable[exp]
+        else:
+            # Otras líneas (declaraciones, llaves, etc.)
             codigo_optimizado.append(linea)
     
-    return '\n'.join(codigo_optimizado), lineas_optimizables
+    return '\n'.join(codigo_optimizado), lineas_optimizables, lineas_modificadas
 
 
 def obtener_estadisticas_optimizacion(codigo_original, codigo_optimizado, triplos_original, triplos_optimizado):
