@@ -3,7 +3,7 @@ from tkinter import ttk
 from compiler import compilar_codigo
 from utils import actualizar_lineas
 from config import TEXTO_INICIAL
-from optimizacion import detectar_optimizaciones
+from optimizacion import detectar_optimizaciones, aplicar_optimizacion
 
 def crear_interfaz():
   root = tk.Tk()
@@ -203,28 +203,29 @@ def crear_interfaz():
       # Detectar líneas optimizables
       lineas_optimizables = detectar_optimizaciones(codigo)
       
+      # Aplicar optimización (obtiene código con sustituciones y líneas modificadas)
+      codigo_optimizado, _, lineas_modificadas = aplicar_optimizacion(codigo)
+      lineas_optimizadas = codigo_optimizado.split('\n')
+      
       # Limpiar tablas
       for item in tabla_original.get_children():
           tabla_original.delete(item)
       for item in tabla_optimizada.get_children():
           tabla_optimizada.delete(item)
       
-      # Llenar tabla original (con resaltado amarillo en líneas optimizables)
+      # Llenar tabla original (con resaltado amarillo en líneas optimizables Y modificadas)
       for i, linea in enumerate(lineas):
           num_linea = i + 1
-          if num_linea in lineas_optimizables:
-              # Línea optimizable - resaltar en amarillo
+          if num_linea in lineas_optimizables or num_linea in lineas_modificadas:
+              # Línea optimizable o modificada - resaltar en amarillo
               tabla_original.insert("", "end", values=(num_linea, linea), tags=('optimizada',))
           else:
               # Línea normal
               tabla_original.insert("", "end", values=(num_linea, linea))
       
-      # Llenar tabla optimizada (sin las líneas optimizables)
-      num_linea_opt = 1
-      for i, linea in enumerate(lineas):
-          num_linea_orig = i + 1
-          if num_linea_orig not in lineas_optimizables:
-              tabla_optimizada.insert("", "end", values=(num_linea_opt, linea))
-              num_linea_opt += 1
+      # Llenar tabla optimizada (con el código que incluye sustituciones)
+      for i, linea in enumerate(lineas_optimizadas):
+          num_linea_opt = i + 1
+          tabla_optimizada.insert("", "end", values=(num_linea_opt, linea))
 
   return root
