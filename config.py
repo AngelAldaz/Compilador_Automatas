@@ -10,9 +10,15 @@ TIPOS = {"num": "int", "chain": "str", "cow": "float"}
 TEXTO_INICIAL ="""num id_int1 , id_int2 , id_int3
 cow id_real1 , id_real2 , id_real3
 chain id_cadena1 , id_cadena2 , id_cadena3
+id_int1 = id_int2 + 5
+id_int2 = id_int3 + 10
+id_int1 = id_int2 + 5
+id_int2 = id_int3 + 10
+id_real1 = 3
+id_real2 = id_real1 * 2
+id_real2 = id_real1 * 2
 for id_int1 < 5 ; id_int1 = id_int1 + 1 {
-id_int2 = ( id_int3 + 1 ) * 3
-id_int3 = id_int3 * ( 2 + 4 )
+id_int3 = id_int2 + 1
 }
 id_int3 = 0
 """
