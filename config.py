@@ -7,18 +7,18 @@ REGEX_STRING = r'"([^"]+)"'
 TIPOS = {"num": "int", "chain": "str", "cow": "float"}
 
 # Texto inicial en el editor
-TEXTO_INICIAL ="""num id_int1 , id_int2 , id_int3
-cow id_real1 , id_real2 , id_real3
-chain id_cadena1 , id_cadena2 , id_cadena3
-id_int1 = id_int2 + 5
-id_int2 = id_int3 + 10
-id_int1 = id_int2 + 5
-id_int2 = id_int3 + 10
+TEXTO_INICIAL ="""num id_a , id_b , id_c , id_w , id_j , id_m
+cow id_real1 , id_real2
+chain id_cadena1 , id_cadena2
+id_a = id_j + 56
+id_b = id_m - 45
+id_c = id_j + 56
+id_w = id_a + id_b
+id_b = id_c * 4
 id_real1 = 3
 id_real2 = id_real1 * 2
 id_real2 = id_real1 * 2
-for id_int1 < 5 ; id_int1 = id_int1 + 1 {
-id_int3 = id_int2 + 1
+for id_a < 5 ; id_a = id_a + 1 {
+id_w = id_w + 1
 }
-id_int3 = 0
 """
