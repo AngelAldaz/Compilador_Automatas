@@ -42,13 +42,17 @@ def detectar_optimizaciones(codigo):
                         alguna_var_cambio = False
                         for var in variables_en_expresion:
                             if var in ultima_modificacion:
-                                # Buscar en qué línea se asignó var_anterior
+                                # Buscar la ÚLTIMA línea donde se asignó var_anterior (antes de la actual)
+                                linea_var_anterior = None
                                 for j in range(i):
                                     linea_previa = lineas[j].split()
                                     if linea_previa and linea_previa[0] == var_anterior:
-                                        if var in ultima_modificacion and ultima_modificacion[var] > (j + 1):
-                                            alguna_var_cambio = True
-                                            break
+                                        linea_var_anterior = j + 1
+                                
+                                # Comparar si la variable cambió después de esa asignación
+                                if linea_var_anterior and ultima_modificacion[var] > linea_var_anterior:
+                                    alguna_var_cambio = True
+                                    break
                         
                         if not alguna_var_cambio:
                             # Esta línea es redundante
@@ -58,11 +62,8 @@ def detectar_optimizaciones(codigo):
                     # Registrar esta expresión
                     expresion_a_variable[expresion] = variable
                     
-                    # Limpiar expresiones anteriores con esta variable
-                    expresiones_a_eliminar = [exp for exp, var in expresion_a_variable.items() if var == variable]
-                    for exp in expresiones_a_eliminar:
-                        if exp != expresion:
-                            del expresion_a_variable[exp]
+                    # NO limpiar expresiones de la misma variable - necesitamos detectar redundancias consecutivas
+                    # Solo registrar la modificación
                     
                     # Registrar modificación
                     ultima_modificacion[variable] = num_linea
@@ -132,12 +133,17 @@ def aplicar_optimizacion(codigo):
                         alguna_var_cambio = False
                         for var in variables_en_expresion:
                             if var in ultima_modificacion:
+                                # Buscar la ÚLTIMA línea donde se asignó var_anterior (antes de la actual)
+                                linea_var_anterior = None
                                 for j in range(i):
                                     linea_previa = lineas[j].split()
                                     if linea_previa and linea_previa[0] == var_anterior:
-                                        if var in ultima_modificacion and ultima_modificacion[var] > (j + 1):
-                                            alguna_var_cambio = True
-                                            break
+                                        linea_var_anterior = j + 1
+                                
+                                # Comparar si la variable cambió después de esa asignación
+                                if linea_var_anterior and ultima_modificacion[var] > linea_var_anterior:
+                                    alguna_var_cambio = True
+                                    break
                         
                         if not alguna_var_cambio:
                             # Esta línea es redundante
@@ -158,11 +164,11 @@ def aplicar_optimizacion(codigo):
                     # Registrar esta expresión
                     expresion_a_variable[expresion_sustituida] = variable
                     
-                    # Limpiar expresiones anteriores con esta variable
-                    expresiones_a_eliminar = [exp for exp, var in expresion_a_variable.items() if var == variable]
-                    for exp in expresiones_a_eliminar:
-                        if exp != expresion_sustituida:
-                            del expresion_a_variable[exp]
+                    # NO limpiar expresiones - mantener registro para detectar redundancias consecutivas
+                    # Solo limpiar si la variable tiene una expresión DIFERENTE
+                    # expresiones_a_eliminar = [exp for exp, var in expresion_a_variable.items() if var == variable and exp != expresion_sustituida]
+                    # for exp in expresiones_a_eliminar:
+                    #     del expresion_a_variable[exp]
                     
                     # Registrar modificación
                     ultima_modificacion[variable] = num_linea
