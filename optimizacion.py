@@ -4,6 +4,8 @@ Técnica: Eliminación de Código Redundante
 """
 import re
 from config import ID_REGEX
+from triplo import tokenizar_linea
+from triplo import tokenizar_linea
 
 def detectar_optimizaciones(codigo):
     """
@@ -21,7 +23,7 @@ def detectar_optimizaciones(codigo):
     
     for i, linea in enumerate(lineas):
         num_linea = i + 1
-        lexemas = linea.split()
+        lexemas = tokenizar_linea(linea)
         
         # Buscar asignaciones: variable = expresion
         if '=' in lexemas and lexemas[0] != 'for':
@@ -45,7 +47,7 @@ def detectar_optimizaciones(codigo):
                                 # Buscar la ÚLTIMA línea donde se asignó var_anterior (antes de la actual)
                                 linea_var_anterior = None
                                 for j in range(i):
-                                    linea_previa = lineas[j].split()
+                                    linea_previa = tokenizar_linea(lineas[j])
                                     if linea_previa and linea_previa[0] == var_anterior:
                                         linea_var_anterior = j + 1
                                 
@@ -105,7 +107,7 @@ def aplicar_optimizacion(codigo):
     
     for i, linea in enumerate(lineas):
         num_linea = i + 1
-        lexemas = linea.split()
+        lexemas = tokenizar_linea(linea)
         
         # Buscar asignaciones: variable = expresion
         if '=' in lexemas and lexemas[0] != 'for':
@@ -136,7 +138,7 @@ def aplicar_optimizacion(codigo):
                                 # Buscar la ÚLTIMA línea donde se asignó var_anterior (antes de la actual)
                                 linea_var_anterior = None
                                 for j in range(i):
-                                    linea_previa = lineas[j].split()
+                                    linea_previa = tokenizar_linea(lineas[j])
                                     if linea_previa and linea_previa[0] == var_anterior:
                                         linea_var_anterior = j + 1
                                 

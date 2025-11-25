@@ -1,14 +1,14 @@
 import re
 from config import ID_REGEX, REGEX_STRING, TIPOS
 from utils import tipar_lista, autoajustar_columnas
-from triplo import generar_triplos
+from triplo import generar_triplos, tokenizar_linea
 
 def compilar_codigo(editor, tabla, tabla_dicc, tabla_triplos=None):
   codigo = editor.get("1.0", "end").strip()  # quitar espacios innecesarios
   lexemaDict = {}
 
   for linea in codigo.split("\n"):
-    lexemas = linea.split()
+    lexemas = tokenizar_linea(linea)
     # Obtener el tipo de línea basado en los lexemas presentes
     tipo_de_linea = next((t for t in TIPOS if t in lexemas), None)
     lexemas = tipar_lista(lexemas)
