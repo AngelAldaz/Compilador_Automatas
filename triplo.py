@@ -1,3 +1,43 @@
+def tokenizar_linea(linea):
+    """
+    Divide una línea en tokens, respetando strings entre comillas.
+    """
+    tokens = []
+    i = 0
+    token_actual = ""
+    en_string = False
+    
+    while i < len(linea):
+        char = linea[i]
+        
+        if char == '"':
+            if en_string:
+                token_actual += char
+                tokens.append(token_actual)
+                token_actual = ""
+                en_string = False
+            else:
+                if token_actual:
+                    tokens.append(token_actual)
+                    token_actual = ""
+                en_string = True
+                token_actual += char
+        elif en_string:
+            token_actual += char
+        elif char in ' \t':
+            if token_actual:
+                tokens.append(token_actual)
+                token_actual = ""
+        else:
+            token_actual += char
+        
+        i += 1
+    
+    if token_actual:
+        tokens.append(token_actual)
+    
+    return tokens
+
 def es_evaluacion(linea_lexemas, listaEvaluacion = ["<",">","<=",">=","==","!=","="]):
     return any(op in linea_lexemas for op in listaEvaluacion)
 def es_binario(linea_lexemas, listaBinarios = ["or","and"]):
@@ -293,7 +333,7 @@ def generar_triplos(codigo):
     false_triple_key = None
     
     for linea in lineas:
-        linea_lexemas = linea.split()
+        linea_lexemas = tokenizar_linea(linea)
         
         if linea.strip() == "}":
             # antes de actualizar el triplo Falso, generar el incremento y el JMP al inicio del for
