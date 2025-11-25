@@ -58,7 +58,7 @@ def compilar_errores(editor, tabla_dicc, lexemaDict):
   for item in tabla_dicc.get_children():
     tabla_dicc.delete(item)
   for linea in lineas:
-    linea_de_lexemas = linea.split()
+    linea_de_lexemas = tokenizar_linea(linea)
     linea_de_tipos = []
      # limpiar tabla
     # --- Detectar declaración ---
@@ -109,9 +109,18 @@ def compilar_errores(editor, tabla_dicc, lexemaDict):
       else:
         if not any(all(x in ('', tipo) for x in linea_de_tipos) for tipo in TIPOS):
           linea_error = lineas_recorridas + 1
-          # Determinar tipo esperado (el más común en la línea, ignorando vacíos)
-          tipos_validos = [t for t in linea_de_tipos if t not in ('', None)]
-          tipo_esperado = max(set(tipos_validos), key=tipos_validos.count) if tipos_validos else None
+          
+          # Determinar tipo esperado: priorizar la variable del lado izquierdo (antes del =)
+          indice_asignacion = linea_de_lexemas.index("=")
+          tipo_variable_izquierda = linea_de_tipos[indice_asignacion - 1] if indice_asignacion > 0 else None
+          
+          # Si la variable izquierda tiene tipo válido, ese es el esperado
+          if tipo_variable_izquierda and tipo_variable_izquierda not in ('', None):
+            tipo_esperado = tipo_variable_izquierda
+          else:
+            # Si no, buscar el tipo más común (caso fallback)
+            tipos_validos = [t for t in linea_de_tipos if t not in ('', None)]
+            tipo_esperado = max(set(tipos_validos), key=tipos_validos.count) if tipos_validos else None
 
           # Buscar el primer lexema que no coincida con el tipo esperado
           lexema_error = None
