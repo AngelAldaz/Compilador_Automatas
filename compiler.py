@@ -86,15 +86,24 @@ def compilar_errores(editor, tabla_dicc, lexemaDict):
         for indice in indices:
           linea_error = lineas_recorridas+1
           lexema_error = linea_de_lexemas[indice]
+          
+          # Verificar si es un identificador (variable)
+          es_variable = re.match(ID_REGEX, str(lexema_error))
+          
           if not any(op in linea_de_lexemas for op in ["+","-","*","/"]):
             token = f"EA{token_error_asignacion}"
             token_error_asignacion += 1
-            descripcion = "Error de asignación: Lexema indeterminado"
-            
+            if es_variable:
+              descripcion = "Error de asignación: Variable no declarada"
+            else:
+              descripcion = "Error de asignación: Lexema indeterminado"
           else:
             token = f"EO{token_error_operacion}"
             token_error_operacion += 1
-            descripcion = "Error de operacion: Lexema indeterminado"
+            if es_variable:
+              descripcion = "Error de operación: Variable no declarada"
+            else:
+              descripcion = "Error de operación: Lexema indeterminado"
           tabla_dicc.insert("", "end", values=(token, linea_error, lexema_error, descripcion))
           autoajustar_columnas(tabla_dicc)
       else:
