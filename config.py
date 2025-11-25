@@ -24,4 +24,5 @@ id_temp = id_suma * 2
 for id_contador < 10 ; id_contador = id_contador + 1 {
 id_total = id_total + id_precio
 }
+id_mensaje = "Fin del codigo"
 """
