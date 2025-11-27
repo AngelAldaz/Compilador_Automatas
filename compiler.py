@@ -107,30 +107,52 @@ def compilar_errores(editor, tabla_dicc, lexemaDict):
           tabla_dicc.insert("", "end", values=(token, linea_error, lexema_error, descripcion))
           autoajustar_columnas(tabla_dicc)
       else:
-        if not any(all(x in ('', tipo) for x in linea_de_tipos) for tipo in TIPOS):
-          linea_error = lineas_recorridas + 1
-          
-          # Determinar tipo esperado: priorizar la variable del lado izquierdo (antes del =)
-          indice_asignacion = linea_de_lexemas.index("=")
-          tipo_variable_izquierda = linea_de_tipos[indice_asignacion - 1] if indice_asignacion > 0 else None
-          
-          # Si la variable izquierda tiene tipo válido, ese es el esperado
-          if tipo_variable_izquierda and tipo_variable_izquierda not in ('', None):
-            tipo_esperado = tipo_variable_izquierda
-          else:
-            # Si no, buscar el tipo más común (caso fallback)
-            tipos_validos = [t for t in linea_de_tipos if t not in ('', None)]
-            tipo_esperado = max(set(tipos_validos), key=tipos_validos.count) if tipos_validos else None
-
-          # Buscar el primer lexema que no coincida con el tipo esperado
-          lexema_error = None
+        # Determinar tipo esperado: priorizar la variable del lado izquierdo (antes del =)
+        indice_asignacion = linea_de_lexemas.index("=")
+        tipo_variable_izquierda = linea_de_tipos[indice_asignacion - 1] if indice_asignacion > 0 else None
+        
+        # Validar compatibilidad de tipos
+        hay_error = False
+        lexema_error = None
+        
+        if tipo_variable_izquierda and tipo_variable_izquierda not in ('', None):
+          # Verificar cada tipo en la línea
           for lexema, tipo_detectado in zip(linea_de_lexemas, linea_de_tipos):
-            if tipo_detectado not in ('', None) and tipo_detectado != tipo_esperado:
-              lexema_error = lexema
-              break
+            if tipo_detectado not in ('', None):
+              # Si la variable es cow, acepta num y cow
+              if tipo_variable_izquierda == "cow":
+                if tipo_detectado not in ("cow", "num"):
+                  hay_error = True
+                  lexema_error = lexema
+                  break
+              # Si la variable es num, solo acepta num
+              elif tipo_variable_izquierda == "num":
+                if tipo_detectado != "num":
+                  hay_error = True
+                  lexema_error = lexema
+                  break
+              # Si la variable es chain, solo acepta chain o vacío
+              elif tipo_variable_izquierda == "chain":
+                if tipo_detectado != "chain":
+                  hay_error = True
+                  lexema_error = lexema
+                  break
+        else:
+          # Si no hay variable izquierda válida, usar lógica anterior (todos del mismo tipo)
+          if not any(all(x in ('', tipo) for x in linea_de_tipos) for tipo in TIPOS):
+            hay_error = True
+            tipos_validos = [t for t in linea_de_tipos if t not in ('', None)]
+            tipo_variable_izquierda = max(set(tipos_validos), key=tipos_validos.count) if tipos_validos else None
+            for lexema, tipo_detectado in zip(linea_de_lexemas, linea_de_tipos):
+              if tipo_detectado not in ('', None) and tipo_detectado != tipo_variable_izquierda:
+                lexema_error = lexema
+                break
+        
+        if hay_error:
+          linea_error = lineas_recorridas + 1
           token = f"ET{token_error_tipo}"
           token_error_tipo += 1
-          descripcion = f"Error de tipo: Incompatiblidad de tipos, {tipo_esperado}"
+          descripcion = f"Error de tipo: Incompatiblidad de tipos, {tipo_variable_izquierda}"
           tabla_dicc.insert("", "end", values=(token, linea_error, lexema_error, descripcion))
           autoajustar_columnas(tabla_dicc)
     lineas_recorridas += 1
