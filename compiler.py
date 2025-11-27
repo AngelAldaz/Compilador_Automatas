@@ -2,9 +2,16 @@ import re
 from config import ID_REGEX, REGEX_STRING, TIPOS
 from utils import tipar_lista, autoajustar_columnas
 from triplo import generar_triplos, tokenizar_linea
+from optimizacion import aplicar_optimizacion
 
 def compilar_codigo(editor, tabla, tabla_dicc, tabla_triplos=None):
-  codigo = editor.get("1.0", "end").strip()  # quitar espacios innecesarios
+  codigo_original = editor.get("1.0", "end").strip()  # quitar espacios innecesarios
+  
+  # PASO 1: Optimizar el código primero
+  codigo_optimizado, _, _ = aplicar_optimizacion(codigo_original)
+  
+  # PASO 2: Trabajar con el código optimizado para generar tablas
+  codigo = codigo_optimizado
   lexemaDict = {}
 
   for linea in codigo.split("\n"):
@@ -37,14 +44,14 @@ def compilar_codigo(editor, tabla, tabla_dicc, tabla_triplos=None):
     tabla.insert("", "end", values=(lex, "" if tipo == "Indeterminado" else tipo))
   autoajustar_columnas(tabla)
 
-  compilar_errores(editor, tabla_dicc, lexemaDict)
+  compilar_errores(codigo, tabla_dicc, lexemaDict)
   
   # Generar y mostrar triplos si la tabla está disponible
   if tabla_triplos is not None:
-    compilar_triplos(editor, tabla_triplos)
+    compilar_triplos(codigo, tabla_triplos)
   
-def compilar_errores(editor, tabla_dicc, lexemaDict):
-  codigo = editor.get("1.0", "end").strip()  # quitar espacios innecesarios
+def compilar_errores(codigo, tabla_dicc, lexemaDict):
+  # Ahora recibe el código directamente (ya optimizado)
   lineas = codigo.split("\n")
   lineas_recorridas = 0
   
@@ -157,9 +164,9 @@ def compilar_errores(editor, tabla_dicc, lexemaDict):
           autoajustar_columnas(tabla_dicc)
     lineas_recorridas += 1
 
-def compilar_triplos(editor, tabla_triplos):
+def compilar_triplos(codigo, tabla_triplos):
   """Genera y muestra la tabla de triplos"""
-  codigo = editor.get("1.0", "end").strip()
+  # Ahora recibe el código directamente (ya optimizado)
   
   # Generar triplos
   triplos = generar_triplos(codigo)
