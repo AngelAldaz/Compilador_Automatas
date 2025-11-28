@@ -237,18 +237,18 @@ def nuevo_temporal(temp_counter, available_temporales):
 def reducir_expresion_flat(tokens, tabla_triplos, contador_lineas, temp_counter, available_temporales):
     """
     Reduce expresiones respetando la jerarquía de operadores:
-    1. Multiplicación (*) y División (/) - Mayor precedencia
+    1. Multiplicación (*), División (/) y Módulo (%) - Mayor precedencia
     2. Suma (+) y Resta (-) - Menor precedencia
     """
     if len(tokens) == 1:
         return tokens[0], contador_lineas, temp_counter
     
-    # Primero, procesar multiplicaciones y divisiones (mayor precedencia)
-    # Buscar operadores * y / de izquierda a derecha
+    # Primero, procesar multiplicaciones, divisiones y módulos (mayor precedencia)
+    # Buscar operadores *, /, % de izquierda a derecha
     i = 1
     while i < len(tokens):
-        if i < len(tokens) and tokens[i] in ['*', '/']:
-            # Encontramos una multiplicación o división
+        if i < len(tokens) and tokens[i] in ['*', '/', '%']:
+            # Encontramos una multiplicación, división o módulo
             operando_izq = tokens[i-1]
             operador = tokens[i]
             operando_der = tokens[i+1]
